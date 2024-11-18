@@ -11,3 +11,4 @@ type Discussion struct {
 	Content  string             `bson:"content" json:"content"`
 	Replies  []string           `bson:"replies" json:"replies"`
 }
+
