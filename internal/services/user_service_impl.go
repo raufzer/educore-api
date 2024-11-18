@@ -1,8 +1,8 @@
-package service
+package services
 
 import (
 	"context"
-	"net"
+	"educore-api/internal/models"
 
 	"go.mongodb.org/mongo-driver/mongo"
 )
@@ -12,10 +12,22 @@ type UserServiceImpl struct {
 	ctx            context.Context
 }
 
-func (u *UserServiceImpl) CreateUser(user *User) error {
+func (u *UserService) CreateUser(user *models.User) error {
 	return nil
 }
 
-func (u *UserServiceImpl) GetUser(name *string) (*model.User, error) {
+func (u *UserService) GetUser(name *string) (*models.User, error) {
 	return nil, nil
+}
+
+func (u *UserService) GetAllUsers() ([]*models.User, error) {
+	return nil, nil
+}
+
+func (u *UserService) UpdateUser(user *models.User) error {
+	return nil
+}
+
+func (u *UserService) DeleteUser(name *string) error {
+	return nil
 }

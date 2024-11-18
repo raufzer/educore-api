@@ -1,10 +1,12 @@
-package service
+package services
 
 
 type UserService struct {
-	CreateUser(*models.User) error
-	GetUser(*string) (*models.User, error)
-	GetAllUsers() ([]*models.User, error)
-	UpdateUser(*model.User) error
-	DeleteUser(*string) erro
+	createUser(*models.User) error
+	getUser(*string) (*models.User, error)
+	getAllUsers() ([]*models.User, error)
+	updateUser(*model.User) error
+	deleteUser(*string) error
 }
+
+
