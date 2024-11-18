@@ -1,4 +1,4 @@
-package main
+package models
 
 import (
 	"time"
@@ -8,10 +8,10 @@ import (
 
 type User struct {
 	ID        primitive.ObjectID `bson:"_id,omitempty" json:"id"`
-	Role      string             `bson:"role" json:"role"`
 	Name      string             `bson:"name" json:"name"`
 	Email     string             `bson:"email" json:"email"`
-	Password  string             `bson:"password_hash" json:"password_hash"`
+	Password  string             `bson:"password" json:"password"`
+	Role      string             `bson:"role" json:"role"`
 	CreatedAt time.Time          `bson:"created_at" json:"createdAt"`
 	UpdatedAt time.Time          `bson:"updated_at" json:"updatedAt"`
 }
