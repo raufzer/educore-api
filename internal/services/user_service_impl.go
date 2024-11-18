@@ -1,33 +1,36 @@
 package services
 
 import (
-	"context"
 	"educore-api/internal/models"
-
-	"go.mongodb.org/mongo-driver/mongo"
+	"educore-api/internal/repositories"
 )
 
 type UserServiceImpl struct {
-	userCollection *mongo.Collection
-	ctx            context.Context
+	userRepo repository.UserRepository
 }
 
-func (u *UserService) CreateUser(user *models.User) error {
-	return nil
+func NewUserService(userRepo repository.UserRepository) *UserServiceImpl {
+	return &UserServiceImpl{
+		userRepo: userRepo,
+	}
 }
 
-func (u *UserService) GetUser(name *string) (*models.User, error) {
-	return nil, nil
+func (u *UserServiceImpl) CreateUser(user *models.User) error {
+	return u.userRepo.Create(user)
 }
 
-func (u *UserService) GetAllUsers() ([]*models.User, error) {
-	return nil, nil
+func (u *UserServiceImpl) GetUser(name *string) (*models.User, error) {
+	return u.userRepo.GetByName(*name)
 }
 
-func (u *UserService) UpdateUser(user *models.User) error {
-	return nil
+func (u *UserServiceImpl) GetAllUsers() ([]*models.User, error) {
+	return u.userRepo.GetAll()
 }
 
-func (u *UserService) DeleteUser(name *string) error {
-	return nil
+func (u *UserServiceImpl) UpdateUser(user *models.User) error {
+	return u.userRepo.Update(user)
+}
+
+func (u *UserServiceImpl) DeleteUser(name *string) error {
+	return u.userRepo.Delete(*name)
 }
