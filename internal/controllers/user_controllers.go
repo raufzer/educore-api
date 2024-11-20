@@ -48,7 +48,7 @@ func (uc *UserController) GetAllUsers(ctx *gin.Context) {
 		ctx.JSON(http.StatusInternalServerError, gin.H{"message": err.Error()})
 		return
 	}
-	ctx.JSON(http.StatusOK, users) // Return users directly
+	ctx.JSON(http.StatusOK, users) 
 }
 
 func (uc *UserController) UpdateUser(ctx *gin.Context) {
