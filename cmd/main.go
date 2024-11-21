@@ -9,6 +9,7 @@ import (
 	"log"
 
 	"github.com/gin-gonic/gin" // swagger embed files
+	"github.com/go-playground/validator/v10"
 	swaggerFiles "github.com/swaggo/files"
 	ginSwagger "github.com/swaggo/gin-swagger" // gin-swagger middleware
 
@@ -31,21 +32,26 @@ import (
 // @BasePath /v1
 
 func main() {
-	appConfig := config.LoadConfig()
+	appConfig, _ := config.LoadConfig()
 
 	dbConfig := config.ConnectDatabase(appConfig)
 	defer dbConfig.Client.Disconnect(dbConfig.Ctx)
+	validate := validator.New()
 
 	userRepo := repositories.NewUserRepository(dbConfig.UserCollection)
 	userService := services.NewUserService(userRepo)
 	userController := controllers.NewUserController(userService)
+
+	authService := services.NewAuthenticationServiceImpl(userRepo, validate)
+	authController := controllers.NewAuthenticationController(authService)
 
 	server := gin.Default()
 
 	server.GET("/swagger/*any", ginSwagger.WrapHandler(swaggerFiles.Handler))
 
 	basePath := server.Group("/v1")
-	v1.RegisterUserRoutes(basePath, userController)
+	v1.UserRoutes(basePath, userController)
+	v1.AuthenticationRoutes(basePath, authController)
 
 	log.Printf("Server running on port %s", appConfig.ServerPort)
 	log.Fatal(server.Run(":" + appConfig.ServerPort))
