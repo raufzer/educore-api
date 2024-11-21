@@ -5,15 +5,32 @@ import (
 	"educore-api/internal/controllers"
 	"educore-api/internal/repositories"
 	"educore-api/internal/services"
-	"educore-api/routes/api/v1"
-
+	v1 "educore-api/routes/api/v1"
 	"log"
 
-	"github.com/gin-gonic/gin"
+	"github.com/gin-gonic/gin" // swagger embed files
+	swaggerFiles "github.com/swaggo/files"
+	ginSwagger "github.com/swaggo/gin-swagger" // gin-swagger middleware
+
+	_ "educore-api/docs" // Import the generated docs package
 )
 
-func main() {
+// @title EduCore API
+// @version 1.0
+// @description API for managing users in EduCore system
+// @termsOfService http://example.com/terms/
 
+// @contact.name API Support
+// @contact.url http://www.example.com/support
+// @contact.email support@example.com
+
+// @license.name MIT
+// @license.url https://opensource.org/licenses/MIT
+
+// @host localhost:9090
+// @BasePath /v1
+
+func main() {
 	appConfig := config.LoadConfig()
 
 	dbConfig := config.ConnectDatabase(appConfig)
@@ -24,8 +41,10 @@ func main() {
 	userController := controllers.NewUserController(userService)
 
 	server := gin.Default()
-	basePath := server.Group("/v1")
 
+	server.GET("/swagger/*any", ginSwagger.WrapHandler(swaggerFiles.Handler))
+
+	basePath := server.Group("/v1")
 	v1.RegisterUserRoutes(basePath, userController)
 
 	log.Printf("Server running on port %s", appConfig.ServerPort)

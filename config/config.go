@@ -7,31 +7,29 @@ import (
 	"github.com/joho/godotenv"
 )
 
-// AppConfig holds application-wide configurations
 type AppConfig struct {
-	ServerPort string
+	ServerPort  string
 	DatabaseURI string
 }
 
-// LoadConfig loads configurations from environment variables or a `.env` file
 func LoadConfig() *AppConfig {
-	// Load environment variables from a .env file
-	err := godotenv.Load()
+
+	err := godotenv.Load("../.env")
 	if err != nil {
-		log.Println("No .env file found, using default environment variables")
+		log.Println("Warning: No .env file found, using default environment variables.")
 	}
 
-	// Retrieve configuration values
 	return &AppConfig{
-		ServerPort: getEnv("SERVER_PORT", "9090"),
-		DatabaseURI: getEnv("DATABASE_URI", "mongodb://localhost:27017"),
+		ServerPort:  getEnv("SERVER_PORT"),
+		DatabaseURI: getEnv("DATABASE_URI"),
 	}
 }
 
-// getEnv retrieves environment variables or a default value
-func getEnv(key, defaultValue string) string {
-	if value, exists := os.LookupEnv(key); exists {
-		return value
+func getEnv(key string) string {
+
+	value := os.Getenv(key)
+	if value == "" {
+		log.Fatalf("Environment variable %s is not set.", key)
 	}
-	return defaultValue
+	return value
 }
