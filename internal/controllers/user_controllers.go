@@ -1,131 +1,198 @@
 package controllers
 
 import (
+	"educore-api/data/request"
+	"educore-api/data/response"
 	"educore-api/internal/models"
 	"educore-api/internal/services"
+	"educore-api/pkg/helpers"
 	"net/http"
+	"time"
 
 	"github.com/gin-gonic/gin"
+	"go.mongodb.org/mongo-driver/bson/primitive"
 )
 
-// UserController represents the controller for user operations
 type UserController struct {
 	UserService services.UserService
 }
 
-// NewUserController creates a new UserController
 func NewUserController(userService services.UserService) *UserController {
 	return &UserController{
 		UserService: userService,
 	}
 }
 
-// CreateUser godoc
-// @Summary Create a new user
-// @Description Create a new user in the system
-// @Tags user
-// @Accept json
-// @Produce json
-// @Param user body models.User true "User data"
-// @Success 201 {object} map[string]string "User created successfully"
-// @Failure 400 {object} map[string]string "Bad request"
-// @Failure 500 {object} map[string]string "Internal server error"
-// @Router /user/create [post]
-func (uc *UserController) CreateUser(ctx *gin.Context) {
-	var user models.User
-	if err := ctx.ShouldBindJSON(&user); err != nil {
-		ctx.JSON(http.StatusBadRequest, gin.H{"message": err.Error()})
-		return
+func toUserResponse(user *models.User) response.UserResponse {
+	return response.UserResponse{
+		ID:        user.ID,
+		Name:      user.Name,
+		Email:     user.Email,
+		Role:      user.Role,
+		CreatedAt: user.CreatedAt,
+		UpdatedAt: user.UpdatedAt,
 	}
-	err := uc.UserService.CreateUser(&user)
-	if err != nil {
-		ctx.JSON(http.StatusInternalServerError, gin.H{"message": err.Error()})
-		return
-	}
-	ctx.JSON(http.StatusCreated, gin.H{"message": "User created"})
 }
 
-// GetUser godoc
-// @Summary Get a user by username
-// @Description Get a user from the system by their username
-// @Tags user
-// @Accept json
-// @Produce json
-// @Param name path string true "Username"
-// @Success 200 {object} models.User "User found"
-// @Failure 404 {object} map[string]string "User not found"
-// @Failure 500 {object} map[string]string "Internal server error"
-// @Router /user/get/{name} [get]
+func (uc *UserController) CreateUser(ctx *gin.Context) {
+	var req request.CreateUsersRequest
+	if err := ctx.ShouldBindJSON(&req); err != nil {
+		ctx.JSON(http.StatusBadRequest, response.Response{
+			Code:    http.StatusBadRequest,
+			Status:  "BAD_REQUEST",
+			Message: err.Error(),
+		})
+		return
+	}
+
+	user := models.User{
+		ID:        primitive.NewObjectID(),
+		Name:      req.Name,
+		Email:     req.Email,
+		Password:  req.Password,
+		Role:      req.Role,
+		CreatedAt: time.Now(),
+		UpdatedAt: time.Now(),
+	}
+
+	err := uc.UserService.CreateUser(&user)
+	if err != nil {
+		helpers.ErrorPanic(err)
+		ctx.JSON(http.StatusInternalServerError, response.Response{
+			Code:    http.StatusInternalServerError,
+			Status:  "INTERNAL_SERVER_ERROR",
+			Message: "Failed to create user",
+		})
+		return
+	}
+
+	userResponse := toUserResponse(&user)
+	ctx.JSON(http.StatusCreated, response.Response{
+		Code:    http.StatusCreated,
+		Status:  "CREATED",
+		Message: "User created successfully",
+		Data:    userResponse,
+	})
+}
+
+func (uc *UserController) UpdateUser(ctx *gin.Context) {
+	var req request.UpdateUserRequest
+	if err := ctx.ShouldBindJSON(&req); err != nil {
+		ctx.JSON(http.StatusBadRequest, response.Response{
+			Code:    http.StatusBadRequest,
+			Status:  "BAD_REQUEST",
+			Message: err.Error(),
+		})
+		return
+	}
+
+	username := ctx.Param("name")
+
+	existingUser, err := uc.UserService.GetUser(&username)
+	if err != nil {
+		ctx.JSON(http.StatusNotFound, response.Response{
+			Code:    http.StatusNotFound,
+			Status:  "NOT_FOUND",
+			Message: "User not found",
+		})
+		return
+	}
+
+	if req.Name != "" {
+		existingUser.Name = req.Name
+	}
+	if req.Email != "" {
+		existingUser.Email = req.Email
+	}
+	if req.Password != "" {
+		existingUser.Password = req.Password
+	}
+	if req.Role != "" {
+		existingUser.Role = req.Role
+	}
+	existingUser.UpdatedAt = time.Now()
+
+	err = uc.UserService.UpdateUser(existingUser)
+	if err != nil {
+		helpers.ErrorPanic(err)
+		ctx.JSON(http.StatusInternalServerError, response.Response{
+			Code:    http.StatusInternalServerError,
+			Status:  "INTERNAL_SERVER_ERROR",
+			Message: "Failed to update user",
+		})
+		return
+	}
+
+	userResponse := toUserResponse(existingUser)
+	ctx.JSON(http.StatusOK, response.Response{
+		Code:    http.StatusOK,
+		Status:  "OK",
+		Message: "User updated successfully",
+		Data:    userResponse,
+	})
+}
+
 func (uc *UserController) GetUser(ctx *gin.Context) {
 	username := ctx.Param("name")
 	user, err := uc.UserService.GetUser(&username)
 	if err != nil {
-		ctx.JSON(http.StatusNotFound, gin.H{"message": "User not found"})
+		ctx.JSON(http.StatusNotFound, response.Response{
+			Code:    http.StatusNotFound,
+			Status:  "NOT_FOUND",
+			Message: "User not found",
+		})
 		return
 	}
-	ctx.JSON(http.StatusOK, user)
+
+	userResponse := toUserResponse(user)
+	ctx.JSON(http.StatusOK, response.Response{
+		Code:    http.StatusOK,
+		Status:  "OK",
+		Message: "User found",
+		Data:    userResponse,
+	})
 }
 
-// GetAllUsers godoc
-// @Summary Get all users
-// @Description Get a list of all users
-// @Tags user
-// @Accept json
-// @Produce json
-// @Success 200 {array} models.User "List of users"
-// @Failure 500 {object} map[string]string "Internal server error"
-// @Router /user/getall [get]
 func (uc *UserController) GetAllUsers(ctx *gin.Context) {
 	users, err := uc.UserService.GetAllUsers()
 	if err != nil {
-		ctx.JSON(http.StatusInternalServerError, gin.H{"message": err.Error()})
+		helpers.ErrorPanic(err)
+		ctx.JSON(http.StatusInternalServerError, response.Response{
+			Code:    http.StatusInternalServerError,
+			Status:  "INTERNAL_SERVER_ERROR",
+			Message: "Failed to fetch users",
+		})
 		return
 	}
-	ctx.JSON(http.StatusOK, users)
+
+	userResponses := make([]response.UserResponse, len(users))
+	for i, user := range users {
+		userResponses[i] = toUserResponse(user)
+	}
+
+	ctx.JSON(http.StatusOK, response.Response{
+		Code:    http.StatusOK,
+		Status:  "OK",
+		Message: "Users retrieved successfully",
+		Data:    userResponses,
+	})
 }
 
-// UpdateUser godoc
-// @Summary Update an existing user
-// @Description Update an existing user's details
-// @Tags user
-// @Accept json
-// @Produce json
-// @Param user body models.User true "User data"
-// @Success 200 {object} map[string]string "User updated successfully"
-// @Failure 400 {object} map[string]string "Bad request"
-// @Failure 500 {object} map[string]string "Internal server error"
-// @Router /user/update [patch]
-func (uc *UserController) UpdateUser(ctx *gin.Context) {
-	var user models.User
-	if err := ctx.ShouldBindJSON(&user); err != nil {
-		ctx.JSON(http.StatusBadRequest, gin.H{"message": err.Error()})
-		return
-	}
-	err := uc.UserService.UpdateUser(&user)
-	if err != nil {
-		ctx.JSON(http.StatusInternalServerError, gin.H{"message": err.Error()})
-		return
-	}
-	ctx.JSON(http.StatusOK, gin.H{"message": "User updated"})
-}
-
-// DeleteUser godoc
-// @Summary Delete a user by username
-// @Description Delete a user from the system by their username
-// @Tags user
-// @Accept json
-// @Produce json
-// @Param name path string true "Username"
-// @Success 200 {object} map[string]string "User deleted successfully"
-// @Failure 404 {object} map[string]string "User not found"
-// @Failure 500 {object} map[string]string "Internal server error"
-// @Router /user/delete/{name} [delete]
 func (uc *UserController) DeleteUser(ctx *gin.Context) {
 	username := ctx.Param("name")
 	err := uc.UserService.DeleteUser(&username)
 	if err != nil {
-		ctx.JSON(http.StatusNotFound, gin.H{"message": "User not found"})
+		ctx.JSON(http.StatusNotFound, response.Response{
+			Code:    http.StatusNotFound,
+			Status:  "NOT_FOUND",
+			Message: "User not found",
+		})
 		return
 	}
-	ctx.JSON(http.StatusOK, gin.H{"message": "User deleted"})
+
+	ctx.JSON(http.StatusOK, response.Response{
+		Code:    http.StatusOK,
+		Status:  "OK",
+		Message: "User deleted successfully",
+	})
 }

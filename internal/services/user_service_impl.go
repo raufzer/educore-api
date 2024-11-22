@@ -3,6 +3,8 @@ package services
 import (
 	"educore-api/internal/models"
 	"educore-api/internal/repositories"
+
+	"go.mongodb.org/mongo-driver/bson/primitive"
 )
 
 type UserServiceImpl struct {
@@ -21,6 +23,9 @@ func (u *UserServiceImpl) CreateUser(user *models.User) error {
 
 func (u *UserServiceImpl) GetUser(name *string) (*models.User, error) {
 	return u.userRepo.GetByName(*name)
+}
+func (u *UserServiceImpl) GetUserID(Id *primitive.ObjectID) (*models.User, error) {
+	return u.userRepo.GetByID(*Id)
 }
 
 func (u *UserServiceImpl) GetAllUsers() ([]*models.User, error) {

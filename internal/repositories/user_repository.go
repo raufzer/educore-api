@@ -3,13 +3,16 @@ package repositories
 import (
 	"context"
 	"educore-api/internal/models"
+
 	"go.mongodb.org/mongo-driver/bson"
+	"go.mongodb.org/mongo-driver/bson/primitive"
 	"go.mongodb.org/mongo-driver/mongo"
 )
 
 type UserRepository interface {
 	Create(user *models.User) error
 	GetByName(name string) (*models.User, error)
+	GetByID(id primitive.ObjectID) (*models.User, error)
 	GetAll() ([]*models.User, error)
 	Update(user *models.User) error
 	Delete(name string) error
@@ -35,6 +38,12 @@ func (r *MongoUserRepository) Create(user *models.User) error {
 func (r *MongoUserRepository) GetByName(name string) (*models.User, error) {
 	var user models.User
 	err := r.collection.FindOne(context.Background(), bson.M{"name": name}).Decode(&user)
+	return &user, err
+}
+
+func (r *MongoUserRepository) GetByID(id primitive.ObjectID) (*models.User, error) {
+	var user models.User
+	err := r.collection.FindOne(context.Background(), bson.M{"ID": id}).Decode(&user)
 	return &user, err
 }
 

@@ -6,7 +6,7 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
-func RegisterUserRoutes(rg *gin.RouterGroup, userController *controllers.UserController) {
+func UserRoutes(rg *gin.RouterGroup, userController *controllers.UserController) {
 	userRoute := rg.Group("/user")
 	userRoute.POST("/create", userController.CreateUser)
 	userRoute.GET("/get/:name", userController.GetUser)
