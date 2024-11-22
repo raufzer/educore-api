@@ -8,51 +8,72 @@ import (
 	v1 "educore-api/routes/api/v1"
 	"log"
 
-	"github.com/gin-gonic/gin" // swagger embed files
+	"github.com/gin-contrib/cors"
+	"github.com/gin-gonic/gin"
 	"github.com/go-playground/validator/v10"
 	swaggerFiles "github.com/swaggo/files"
-	ginSwagger "github.com/swaggo/gin-swagger" // gin-swagger middleware
+	ginSwagger "github.com/swaggo/gin-swagger"
 
-	_ "educore-api/docs" // Import the generated docs package
+	// Swagger documentation
+	_ "educore-api/docs"
 )
 
-// @title EduCore API
-// @version 1.0
-// @description API for managing users in EduCore system
-// @termsOfService http://example.com/terms/
-
-// @contact.name API Support
-// @contact.url http://www.example.com/support
-// @contact.email support@example.com
-
-// @license.name MIT
-// @license.url https://opensource.org/licenses/MIT
-
-// @host localhost:9090
-// @BasePath /v1
-
+// @title           EduCore API
+// @version         1.0
+// @description     Complete API for EduCore Platform
+// @host            localhost:8080
+// @BasePath        /v1
 func main() {
-	appConfig, _ := config.LoadConfig()
+	// Load configuration
+	appConfig, err := config.LoadConfig()
+	if err != nil {
+		log.Fatalf("Failed to load configuration: %v", err)
+	}
 
+	// Database connection
 	dbConfig := config.ConnectDatabase(appConfig)
-	defer dbConfig.Client.Disconnect(dbConfig.Ctx)
+	defer func() {
+		if err := dbConfig.Client.Disconnect(dbConfig.Ctx); err != nil {
+			log.Printf("Error disconnecting database: %v", err)
+		}
+	}()
+
+	// Validator
 	validate := validator.New()
 
+	// Repositories
 	userRepo := repositories.NewUserRepository(dbConfig.UserCollection)
-	userService := services.NewUserService(userRepo)
-	userController := controllers.NewUserController(userService)
 
+	// Services
+	userService := services.NewUserService(userRepo)
 	authService := services.NewAuthenticationServiceImpl(userRepo, validate)
+
+	// Controllers
+	userController := controllers.NewUserController(userService)
 	authController := controllers.NewAuthenticationController(authService)
 
+	// Gin setup
+	gin.SetMode(gin.ReleaseMode) // Production mode
 	server := gin.Default()
 
-	server.GET("/swagger/*any", ginSwagger.WrapHandler(swaggerFiles.Handler))
+	// CORS Configuration
+	server.Use(cors.Default())
 
+	// Global middleware
+	server.Use(gin.Recovery())
+
+	// Swagger setup
+	server.GET("/swagger/*any", ginSwagger.WrapHandler(swaggerFiles.Handler,
+		ginSwagger.URL("http://localhost:"+appConfig.ServerPort+"/swagger/doc.json"),
+	))
+
+	// API Routes
 	basePath := server.Group("/v1")
 	v1.UserRoutes(basePath, userController)
 	v1.AuthenticationRoutes(basePath, authController)
 
-	log.Printf("Server running on port %s", appConfig.ServerPort)
-	log.Fatal(server.Run(":" + appConfig.ServerPort))
+	// Server startup
+	serverAddr := ":" + appConfig.ServerPort
+	log.Printf("🚀 Server starting on %s", serverAddr)
+	log.Fatal(server.Run(serverAddr))
 }
