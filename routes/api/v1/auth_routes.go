@@ -7,7 +7,6 @@ import (
 )
 
 func AuthenticationRoutes(rg *gin.RouterGroup, authenticationController *controllers.AuthenticationController) {
-	authenticationRouter := rg.Group("/authentication")
-	authenticationRouter.POST("/login", authenticationController.Login)
-	authenticationRouter.POST("/register", authenticationController.Register)
+	rg.POST("/sessions", authenticationController.Login)
+	rg.POST("/register", authenticationController.Register)
 }
