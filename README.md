@@ -1,6 +1,6 @@
 # EduCore API
 
-EduCore API is a backend service built with Golang using the Gin framework. It provides robust functionality for managing courses, assignments, student enrollments, and collaboration tools, implementing modern software practices such as layered architecture.
+EduCore API is a high-performance backend service developed in Golang with the Gin framework. Designed for educational platforms, it facilitates seamless course management, assignment handling, student enrollments, and collaboration. Built with a modular layered architecture, it ensures scalability, maintainability, and efficient data processing.
 
 ## Table of Contents
 - [EduCore API](#educore-api)
